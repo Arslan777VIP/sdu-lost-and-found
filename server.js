@@ -36,15 +36,6 @@ function createUser(name, email, password) {
   return row.get(name, email, salt, hash);
 }
 
-if (demo && !db.prepare('SELECT id FROM users WHERE email = ?').get('finder@example.test')) {
-  const finder = createUser('Алия', 'finder@example.test', 'campus-demo-2026');
-  createUser('Данияр', 'owner@example.test', 'campus-demo-2026');
-  const insert = db.prepare('INSERT INTO items(author_id, title, category, location, description, kind) VALUES (?, ?, ?, ?, ?, ?)');
-  insert.run(finder.id, 'Наушники в футляре', 'Электроника', 'Библиотека · 2 этаж', 'Футляр лежал у розетки рядом с окном. Уточните цвет и отличительные признаки.', 'found');
-  insert.run(finder.id, 'Студенческий блокнот', 'Документы и канцтовары', 'Корпус B · B-204', 'Ищу блокнот с конспектами по веб-программированию.', 'lost');
-  insert.run(finder.id, 'Связка ключей', 'Ключи', 'Главный вход', 'Нашла ключи на скамейке. В заявке опишите брелок.', 'found');
-}
-
 const app = express();
 const sessions = new Map();
 const sessionAge = 24 * 60 * 60 * 1000;
