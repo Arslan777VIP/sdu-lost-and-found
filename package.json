@@ -1,0 +1,16 @@
+{
+  "name": "lost-and-found",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --experimental-sqlite server.js",
+    "demo": "node --experimental-sqlite server.js --demo"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}
