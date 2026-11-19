@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Бюро находок кампуса SDU">
+  <title>SDU Lost &amp; Found</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap navigation">
+      <a class="brand" href="/" aria-label="SDU Lost & Found, главная"><span>SDU</span> Lost &amp; Found</a>
+      <nav aria-label="Основная навигация">
+        <button class="nav-button active" id="board-tab" type="button">Объявления</button>
+        <button class="nav-button" id="claims-tab" type="button" hidden>Заявки</button>
+        <button class="nav-button" id="login-button" type="button">Войти</button>
+        <span id="profile" hidden></span>
+        <button class="nav-button" id="logout-button" type="button" hidden>Выйти</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="intro">
+      <p class="context">Бюро находок SDU</p>
+      <h1>Потеряли вещь?<br>Найдём владельца.</h1>
+      <p>Ищите пропажи и сообщайте о вещах, найденных в кампусе.</p>
+      <button class="primary" id="publish-button" type="button">Подать объявление</button>
+    </section>
+
+    <p id="notice" class="notice" role="status" hidden></p>
+
+    <section id="board" class="board">
+      <div class="section-heading">
+        <h2>Доска объявлений</h2>
+        <div class="filters">
+          <label>Поиск
+            <input id="search" type="search" placeholder="Вещь или место">
+          </label>
+          <label>Тип
+            <select id="kind-filter">
+              <option value="">Все</option>
+              <option value="found">Находки</option>
+              <option value="lost">Пропажи</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="listing-grid" id="items"></div>
+    </section>
+
+    <section id="claims" class="board" hidden>
+      <h2>Заявки</h2>
+      <div class="listing-grid" id="claim-list"></div>
+    </section>
+  </main>
+
+  <dialog id="auth-dialog">
+    <div class="dialog-heading">
+      <h2 id="auth-title">Вход</h2>
+      <button class="plain close" type="button" data-close aria-label="Закрыть">×</button>
+    </div>
+    <form id="auth-form">
+      <label id="name-label" hidden>Имя<input name="name" minlength="2" maxlength="60" autocomplete="name"></label>
+      <label>Почта<input name="email" type="email" maxlength="120" autocomplete="email" required></label>
+      <label>Пароль<input name="password" type="password" minlength="8" maxlength="128" autocomplete="current-password" required></label>
+      <p class="form-error" role="alert" hidden></p>
+      <button class="primary" type="submit">Войти</button>
+      <button id="auth-switch" class="plain" type="button">Создать аккаунт</button>
+    </form>
+  </dialog>
+
+  <dialog id="item-dialog">
+    <div class="dialog-heading">
+      <h2 id="item-title">Новое объявление</h2>
+      <button class="plain close" type="button" data-close aria-label="Закрыть">×</button>
+    </div>
+    <form id="item-form">
+      <label>Тип<select name="kind"><option value="found">Нашёл вещь</option><option value="lost">Потерял вещь</option></select></label>
+      <label>Название<input name="title" required minlength="3" maxlength="80"></label>
+      <label>Категория
+        <select name="category">
+          <option>Электроника</option><option>Документы и канцтовары</option><option>Ключи</option><option>Одежда</option><option>Другое</option>
+        </select>
+      </label>
+      <label>Место<input name="location" required minlength="2" maxlength="100" placeholder="Например, библиотека, 2 этаж"></label>
+      <label>Описание<textarea name="description" rows="3" required minlength="10" maxlength="500"></textarea></label>
+      <p class="form-error" role="alert" hidden></p>
+      <button class="primary" type="submit">Опубликовать</button>
+    </form>
+  </dialog>
+
+  <dialog id="claim-dialog">
+    <div class="dialog-heading">
+      <h2 id="claim-title">Заявка</h2>
+      <button class="plain close" type="button" data-close aria-label="Закрыть">×</button>
+    </div>
+    <p id="claim-item"></p>
+    <form id="claim-form">
+      <label id="proof-label" for="proof">Отличительные признаки</label>
+      <textarea id="proof" name="proof" rows="4" required minlength="10" maxlength="500"></textarea>
+      <p class="form-error" role="alert" hidden></p>
+      <button class="primary" type="submit">Отправить заявку</button>
+    </form>
+  </dialog>
+</body>
+</html>
