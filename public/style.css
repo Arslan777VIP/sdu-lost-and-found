@@ -188,6 +188,11 @@ h1 em { color: var(--lime); font-weight: inherit; }
 .status { display: flex; align-items: center; gap: .4rem; }
 .status::before { content: ""; width: .45rem; height: .45rem; border-radius: 100%; background: #548153; }
 .status.closed::before { background: #768378; }
+.status.awaiting_handover { color: #784014; }
+.status.awaiting_handover::before { background: #a66720; }
+.badge.awaiting_handover { color: #784014; background: #fff0d9; }
+.pickup-field { width: 100%; }
+.meeting-note { white-space: pre-wrap; background: #edf3e9; border-radius: .55rem; padding: .75rem; width: 100%; }
 .category { width: 100%; margin-top: -.38rem; }
 .location { display: flex; gap: .5rem; align-items: baseline; font-weight: 600; }
 .location::before {

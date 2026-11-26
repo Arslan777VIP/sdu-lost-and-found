@@ -153,11 +153,11 @@ function renderBoard() {
 
 function renderItem(item) {
   const card = element('article', '', 'card');
-  const closed = item.status === 'closed';
+  const statuses = { open: 'Открыто', awaiting_handover: 'Ожидает передачи', closed: 'Закрыто' };
   const labels = element('div', '', 'card-labels');
   labels.append(
     element('span', item.kind === 'found' ? 'Находка' : 'Пропажа', 'badge ' + item.kind),
-    element('span', closed ? 'Закрыто' : 'Открыто', closed ? 'status closed' : 'status')
+    element('span', statuses[item.status], 'status ' + item.status)
   );
   card.append(
     labels,
@@ -167,7 +167,7 @@ function renderItem(item) {
     element('p', item.description),
     element('p', 'Автор: ' + item.author, 'author meta')
   );
-  if (closed) {
+  if (item.status !== 'open') {
     return card;
   }
   const actions = element('div', '', 'card-actions');
@@ -239,14 +239,34 @@ function renderClaim(claim) {
     element('p', incoming ? 'От: ' + claim.claimant : 'Исходящая заявка', 'meta'),
     element('p', claim.proof)
   );
+  if (claim.meeting_note) {
+    const awaiting = claim.item_status === 'open';
+    const recipient = claim.kind === 'found' ? !incoming : incoming;
+    card.append(element('p', awaiting ? 'Ожидает передачи' : 'Вещь получена', 'badge ' + (awaiting ? 'awaiting_handover' : 'closed')));
+    card.append(element('p', 'Место и время встречи: ' + claim.meeting_note, 'meeting-note'));
+    if (awaiting && recipient) {
+      card.append(button('Вещь получена', async () => {
+        await api('/claims/' + claim.id + '/received', 'PATCH');
+        await refreshClaims();
+        notice('Получение подтверждено. Объявление закрыто.');
+      }, 'primary'));
+    }
+  }
   if (incoming && claim.status === 'pending') {
+    const noteLabel = element('label', 'Место и время встречи (только для вас и автора заявки)', 'pickup-field');
+    const note = document.createElement('textarea');
+    note.rows = 2;
+    note.maxLength = 500;
+    note.placeholder = 'Например, завтра в 14:00 у входа в библиотеку';
+    noteLabel.append(note);
+    card.append(noteLabel);
     const actions = element('div', '', 'card-actions');
     const decide = async status => {
       actions.hidden = true;
       try {
-        await api('/claims/' + claim.id, 'PATCH', { status });
+        await api('/claims/' + claim.id, 'PATCH', { status, meeting_note: note.value });
         await refreshClaims();
-        notice(status === 'accepted' ? 'Заявка подтверждена. Объявление закрыто.' : 'Заявка отклонена.');
+        notice(status === 'accepted' ? 'Заявка подтверждена. Объявление ожидает передачи.' : 'Заявка отклонена.');
       } finally {
         actions.hidden = false;
       }
