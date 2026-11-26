@@ -55,20 +55,26 @@ app.use('/api', (req, res, next) => {
   const cookie = (req.headers.cookie || '').match(/(?:^|;\s*)session=([a-f0-9]{64})(?:;|$)/);
   req.token = cookie?.[1];
   const session = sessions.get(req.token);
-  if (session && session.expires > Date.now()) req.user = session.user;
+  if (session && session.expires > Date.now()) {
+    req.user = session.user;
+  }
   next();
 });
 app.use(express.static(path.join(__dirname, 'public')));
 
 function requireUser(req, res, next) {
-  if (!req.user) return res.status(401).json({ error: 'Войдите в аккаунт.' });
+  if (!req.user) {
+    return res.status(401).json({ error: 'Войдите в аккаунт.' });
+  }
   next();
 }
 
 function startSession(req, res, user) {
   sessions.delete(req.token);
   for (const [token, session] of sessions) {
-    if (session.expires <= Date.now()) sessions.delete(token);
+    if (session.expires <= Date.now()) {
+      sessions.delete(token);
+    }
   }
   const token = randomBytes(32).toString('hex');
   const profile = { id: user.id, name: user.name, email: user.email };
@@ -146,8 +152,12 @@ const findItem = db.prepare(`
 
 function ownOpenItem(req, res, next) {
   const item = findItem.get(req.params.id);
-  if (!item) return res.status(404).json({ error: 'Объявление не найдено.' });
-  if (item.author_id !== req.user.id) return res.status(403).json({ error: 'Изменить объявление может только автор.' });
+  if (!item) {
+    return res.status(404).json({ error: 'Объявление не найдено.' });
+  }
+  if (item.author_id !== req.user.id) {
+    return res.status(403).json({ error: 'Изменить объявление может только автор.' });
+  }
   if (item.status !== 'open' || item.has_handover) {
     return res.status(409).json({ error: 'Объявление закрыто или ожидает передачи.' });
   }
@@ -188,8 +198,12 @@ app.get('/api/claims', requireUser, (req, res) => {
 
 app.post('/api/items/:id/claims', requireUser, (req, res) => {
   const item = findItem.get(req.params.id);
-  if (!item) return res.status(404).json({ error: 'Объявление не найдено.' });
-  if (item.author_id === req.user.id) return res.status(403).json({ error: 'Это ваше объявление.' });
+  if (!item) {
+    return res.status(404).json({ error: 'Объявление не найдено.' });
+  }
+  if (item.author_id === req.user.id) {
+    return res.status(403).json({ error: 'Это ваше объявление.' });
+  }
   if (item.status !== 'open' || item.has_handover) {
     return res.status(409).json({ error: 'Объявление закрыто или ожидает передачи.' });
   }
@@ -201,7 +215,9 @@ app.post('/api/items/:id/claims', requireUser, (req, res) => {
     INSERT INTO claims(item_id, user_id, proof) VALUES (?, ?, ?)
     ON CONFLICT(item_id, user_id) DO NOTHING RETURNING id
   `).get(item.id, req.user.id, proof);
-  if (!claim) return res.status(409).json({ error: 'Вы уже отправляли заявку на это объявление.' });
+  if (!claim) {
+    return res.status(409).json({ error: 'Вы уже отправляли заявку на это объявление.' });
+  }
   res.status(201).json({ claim });
 });
 
@@ -214,8 +230,12 @@ app.patch('/api/claims/:id', requireUser, (req, res) => {
     SELECT c.*, i.author_id, i.status AS item_status
     FROM claims c JOIN items i ON c.item_id = i.id WHERE c.id = ?
   `).get(req.params.id);
-  if (!claim) return res.status(404).json({ error: 'Заявка не найдена.' });
-  if (claim.author_id !== req.user.id) return res.status(403).json({ error: 'Решение принимает автор объявления.' });
+  if (!claim) {
+    return res.status(404).json({ error: 'Заявка не найдена.' });
+  }
+  if (claim.author_id !== req.user.id) {
+    return res.status(403).json({ error: 'Решение принимает автор объявления.' });
+  }
   if (claim.status !== 'pending' || claim.item_status !== 'open') {
     return res.status(409).json({ error: 'Эта заявка уже рассмотрена.' });
   }
@@ -248,13 +268,17 @@ app.patch('/api/claims/:id/received', requireUser, (req, res) => {
     FROM handovers h JOIN items i ON h.item_id = i.id
     JOIN claims c ON h.claim_id = c.id WHERE h.claim_id = ?
   `).get(req.params.id);
-  if (!handover) return res.status(404).json({ error: 'Передача не найдена.' });
+  if (!handover) {
+    return res.status(404).json({ error: 'Передача не найдена.' });
+  }
   if (handover.recipient_id !== req.user.id) {
     return res.status(403).json({ error: 'Подтвердить получение может только получатель вещи.' });
   }
   const result = db.prepare("UPDATE items SET status = 'closed' WHERE id = ? AND status = 'open'")
     .run(handover.item_id);
-  if (!result.changes) return res.status(409).json({ error: 'Получение уже подтверждено.' });
+  if (!result.changes) {
+    return res.status(409).json({ error: 'Получение уже подтверждено.' });
+  }
   res.json({ status: 'closed' });
 });
 
