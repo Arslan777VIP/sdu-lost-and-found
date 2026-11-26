@@ -11,53 +11,122 @@
 <body>
   <header class="top">
     <div class="wrap navigation">
-      <a class="brand" href="/" aria-label="SDU Lost & Found, главная"><span>SDU</span> Lost &amp; Found</a>
+      <a class="brand" href="/" aria-label="SDU University Lost & Found, главная">
+        <img class="brand-logo" src="images/sdu-logo.png" width="263" height="68" alt="SDU University">
+        Lost &amp; Found
+      </a>
       <nav aria-label="Основная навигация">
-        <button class="nav-button active" id="board-tab" type="button">Объявления</button>
-        <button class="nav-button" id="claims-tab" type="button" hidden>Заявки</button>
-        <button class="nav-button" id="login-button" type="button">Войти</button>
-        <span id="profile" hidden></span>
-        <button class="nav-button" id="logout-button" type="button" hidden>Выйти</button>
+        <a class="nav-button" id="board-tab" href="#board">Объявления</a>
+        <a class="nav-button" href="#guide">Как это работает</a>
+        <a class="nav-button" href="#faq">Вопросы</a>
       </nav>
+      <div class="account">
+        <button class="nav-button" id="claims-tab" type="button" hidden>Заявки</button>
+        <button class="account-button" id="login-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/></svg>Войти</button>
+        <span id="profile" hidden></span>
+        <button class="account-button" id="logout-button" type="button" hidden>Выйти</button>
+      </div>
     </div>
   </header>
 
-  <main class="wrap">
+  <main>
     <section class="intro">
-      <p class="context">Бюро находок SDU</p>
-      <h1>Потеряли вещь?<br>Найдём владельца.</h1>
-      <p>Ищите пропажи и сообщайте о вещах, найденных в кампусе.</p>
-      <button class="primary" id="publish-button" type="button">Подать объявление</button>
-    </section>
-
-    <p id="notice" class="notice" role="status" hidden></p>
-
-    <section id="board" class="board">
-      <div class="section-heading">
-        <h2>Доска объявлений</h2>
-        <div class="filters">
-          <label>Поиск
-            <input id="search" type="search" placeholder="Вещь или место">
-          </label>
-          <label>Тип
-            <select id="kind-filter">
-              <option value="">Все</option>
-              <option value="found">Находки</option>
-              <option value="lost">Пропажи</option>
-            </select>
-          </label>
+      <div class="wrap hero-content">
+        <h1>Бюро находок<br><em>кампуса SDU</em></h1>
+        <p>Потеряли вещь или нашли чужую? Проверьте объявления<br class="wide-break"> или расскажите о находке.</p>
+        <div class="hero-actions">
+          <a class="find-action" id="find-button" href="#board"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>Найти вещь</a>
+          <button id="publish-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Подать объявление</button>
         </div>
       </div>
-      <div class="listing-grid" id="items"></div>
     </section>
 
-    <section id="claims" class="board" hidden>
-      <h2>Заявки</h2>
+    <p id="notice" class="wrap notice" role="status" hidden></p>
+
+    <section id="board" class="wrap board" aria-labelledby="board-title" tabindex="-1">
+      <div class="section-heading">
+        <h2 id="board-title">Доска объявлений</h2>
+        <output id="result-count" aria-label="Количество объявлений"></output>
+      </div>
+      <div class="filters">
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+          <span class="sr-only">Поиск по названию, месту или категории</span>
+          <input id="search" type="search" placeholder="Название, место или категория">
+        </label>
+        <label class="category-filter">
+          <span class="sr-only">Категория объявления</span>
+          <select id="category-filter"><option value="">Все категории</option></select>
+        </label>
+        <fieldset id="kind-filter">
+          <legend class="sr-only">Тип объявления</legend>
+          <label><input type="radio" name="kind-filter" value="" checked><span>Все</span></label>
+          <label><input type="radio" name="kind-filter" value="lost"><span>Пропажи</span></label>
+          <label><input type="radio" name="kind-filter" value="found"><span>Находки</span></label>
+        </fieldset>
+      </div>
+      <div class="listing-grid" id="items"></div>
+      <div class="board-error" id="board-error" hidden>
+        <p role="alert">Не удалось загрузить объявления.</p>
+        <button class="account-button" id="retry-board" type="button">Попробовать снова</button>
+      </div>
+    </section>
+
+    <section id="claims" class="wrap board" aria-labelledby="claims-title" tabindex="-1" hidden>
+      <h2 id="claims-title">Заявки</h2>
       <div class="listing-grid" id="claim-list"></div>
+    </section>
+
+    <section id="guide" class="guide info-section" aria-labelledby="guide-title" tabindex="-1">
+      <div class="wrap">
+        <h2 id="guide-title">Как это работает</h2>
+        <ol class="steps">
+          <li>
+            <h3>Проверьте доску</h3>
+            <p>Ищите по названию или месту. Выберите «Находки», если потеряли вещь, или «Пропажи», если нашли чужую.</p>
+          </li>
+          <li>
+            <h3>Откликнитесь</h3>
+            <p>Войдите и отправьте заявку из карточки вещи. Если подходящего объявления ещё нет, опубликуйте своё.</p>
+          </li>
+          <li>
+            <h3>Проверьте ответ</h3>
+            <p>Откройте «Заявки», чтобы узнать решение автора. Там же можно рассмотреть отклики на своё объявление.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+    <section id="faq" class="wrap faq info-section" aria-labelledby="faq-title" tabindex="-1">
+      <h2 id="faq-title">Частые вопросы</h2>
+      <div class="faq-list">
+        <details>
+          <summary>Как показать, что вещь моя?</summary>
+          <p>В карточке находки нажмите «Это моя вещь». В заявке укажите приметы, которые помогут автору узнать вашу вещь, например гравировку или содержимое чехла.</p>
+        </details>
+        <details>
+          <summary>Я нашёл вещь из объявления о пропаже. Что делать?</summary>
+          <p>Нажмите «Я нашёл вещь» и напишите, где она находится. Ваша заявка появится у автора объявления.</p>
+        </details>
+        <details>
+          <summary>Кто принимает решение по заявке?</summary>
+          <p>Автор объявления читает описание и подтверждает или отклоняет заявку. Решение видно в разделе «Заявки» после входа в аккаунт.</p>
+        </details>
+        <details>
+          <summary>Что происходит с другими заявками после подтверждения?</summary>
+          <p>Объявление закрывается, а остальные заявки на рассмотрении по этой вещи автоматически отклоняются.</p>
+        </details>
+      </div>
     </section>
   </main>
 
-  <dialog id="auth-dialog">
+  <footer>
+    <div class="wrap footer-inner">
+      <strong>SDU Lost &amp; Found</strong>
+      <span>Студенческий проект</span>
+    </div>
+  </footer>
+
+  <dialog id="auth-dialog" aria-labelledby="auth-title">
     <div class="dialog-heading">
       <h2 id="auth-title">Вход</h2>
       <button class="plain close" type="button" data-close aria-label="Закрыть">×</button>
@@ -72,7 +141,7 @@
     </form>
   </dialog>
 
-  <dialog id="item-dialog">
+  <dialog id="item-dialog" aria-labelledby="item-title">
     <div class="dialog-heading">
       <h2 id="item-title">Новое объявление</h2>
       <button class="plain close" type="button" data-close aria-label="Закрыть">×</button>
@@ -92,7 +161,7 @@
     </form>
   </dialog>
 
-  <dialog id="claim-dialog">
+  <dialog id="claim-dialog" aria-labelledby="claim-title">
     <div class="dialog-heading">
       <h2 id="claim-title">Заявка</h2>
       <button class="plain close" type="button" data-close aria-label="Закрыть">×</button>

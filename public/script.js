@@ -2,7 +2,8 @@ const get = id => document.getElementById(id);
 const authForm = get('auth-form');
 const itemForm = get('item-form');
 const claimForm = get('claim-form');
-const state = { user: null, items: [], view: 'board', register: false, editId: null, claimId: null, afterLogin: null };
+const state = { user: null, items: null, view: 'board', register: false, editId: null, claimId: null, afterLogin: null };
+let boardRequest = 0;
 
 async function api(url, method = 'GET', data) {
   const options = method === 'GET' ? {} : {
@@ -12,14 +13,18 @@ async function api(url, method = 'GET', data) {
   };
   const response = await fetch('/api' + url, options);
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error || 'Запрос не выполнен.');
+  if (!response.ok) {
+    throw new Error(result.error || 'Запрос не выполнен.');
+  }
   return result;
 }
 
 function element(tag, text, className) {
   const node = document.createElement(tag);
   node.textContent = text;
-  if (className) node.className = className;
+  if (className) {
+    node.className = className;
+  }
   return node;
 }
 
@@ -87,7 +92,9 @@ function setAuthMode(register) {
 
 function updateProfile() {
   get('profile').textContent = state.user?.name || '';
-  for (const id of ['profile', 'logout-button', 'claims-tab']) get(id).hidden = !state.user;
+  for (const id of ['profile', 'logout-button', 'claims-tab']) {
+    get(id).hidden = !state.user;
+  }
   get('login-button').hidden = Boolean(state.user);
 }
 
@@ -95,43 +102,82 @@ function chooseView(view) {
   state.view = view;
   for (const name of ['board', 'claims']) {
     get(name).hidden = name !== view;
-    get(name + '-tab').classList.toggle('active', name === view);
-    if (name === view) get(name + '-tab').setAttribute('aria-current', 'true');
-    else get(name + '-tab').removeAttribute('aria-current');
   }
 }
 
 async function refreshBoard() {
-  state.items = (await api('/items')).items;
+  const request = ++boardRequest;
+  try {
+    const { items } = await api('/items');
+    if (request !== boardRequest) {
+      return;
+    }
+    state.items = items;
+  } catch {
+    if (request === boardRequest) {
+      state.items = null;
+      get('items').replaceChildren();
+      get('result-count').value = '';
+      get('board-error').hidden = false;
+    }
+    return;
+  }
+  const filter = get('category-filter');
+  const previous = filter.value;
+  const categories = [...new Set(state.items.map(item => item.category))].sort((a, b) => a.localeCompare(b, 'ru'));
+  filter.replaceChildren(new Option('Все категории', ''), ...categories.map(name => new Option(name, name)));
+  if (categories.includes(previous)) {
+    filter.value = previous;
+  }
+  get('board-error').hidden = true;
   renderBoard();
 }
 
 function renderBoard() {
+  if (state.items === null) {
+    return;
+  }
   const search = get('search').value.trim().toLowerCase();
-  const kind = get('kind-filter').value;
+  const kind = get('kind-filter').querySelector(':checked').value;
+  const category = get('category-filter').value;
   const items = state.items.filter(item => (!kind || kind === item.kind) &&
+    (!category || category === item.category) &&
     (item.title + ' ' + item.location + ' ' + item.category).toLowerCase().includes(search));
   get('items').replaceChildren(...items.map(renderItem));
-  if (!items.length) get('items').append(element('p', 'Объявлений не найдено.', 'empty'));
+  get('result-count').value = items.length;
+  if (!items.length) {
+    const message = search || kind || category ? 'Совпадений нет. Измените запрос или фильтры.' : 'Объявлений пока нет.';
+    get('items').append(element('p', message, 'empty'));
+  }
 }
 
 function renderItem(item) {
   const card = element('article', '', 'card');
-  const label = item.status === 'closed' ? 'Закрыто' : item.kind === 'found' ? 'Находка' : 'Пропажа';
-  card.append(
-    element('p', label, 'badge ' + (item.status === 'closed' ? 'closed' : item.kind)),
-    element('h3', item.title),
-    element('p', item.category + ' · ' + item.location, 'meta'),
-    element('p', item.description),
-    element('p', 'Автор: ' + item.author, 'meta')
+  const closed = item.status === 'closed';
+  const labels = element('div', '', 'card-labels');
+  labels.append(
+    element('span', item.kind === 'found' ? 'Находка' : 'Пропажа', 'badge ' + item.kind),
+    element('span', closed ? 'Закрыто' : 'Открыто', closed ? 'status closed' : 'status')
   );
-  if (item.status === 'closed') return card;
+  card.append(
+    labels,
+    element('h3', item.title),
+    element('p', item.category, 'category'),
+    element('p', item.location, 'location meta'),
+    element('p', item.description),
+    element('p', 'Автор: ' + item.author, 'author meta')
+  );
+  if (closed) {
+    return card;
+  }
   const actions = element('div', '', 'card-actions');
   if (item.author_id === state.user?.id) {
     actions.append(
       button('Редактировать', () => showItemForm(item)),
       button('Удалить', async () => {
-        if (!confirm('Удалить объявление и связанные заявки?')) return;
+        if (!confirm('Удалить объявление и связанные заявки?')) {
+          return;
+        }
         await api('/items/' + item.id, 'DELETE');
         await refreshBoard();
         notice('Объявление удалено.');
@@ -142,8 +188,11 @@ function renderItem(item) {
   } else {
     const label = item.kind === 'found' ? 'Это моя вещь' : 'Я нашёл вещь';
     actions.append(button(label, () => {
-      if (!state.user) showAuth(() => showClaimForm(item));
-      else showClaimForm(item);
+      if (!state.user) {
+        showAuth(() => showClaimForm(item));
+      } else {
+        showClaimForm(item);
+      }
     }, 'primary'));
   }
   card.append(actions);
@@ -175,7 +224,9 @@ function showClaimForm(item) {
 async function refreshClaims() {
   const { claims } = await api('/claims');
   get('claim-list').replaceChildren(...claims.map(renderClaim));
-  if (!claims.length) get('claim-list').append(element('p', 'Заявок пока нет.', 'empty'));
+  if (!claims.length) {
+    get('claim-list').append(element('p', 'Заявок пока нет.', 'empty'));
+  }
 }
 
 function renderClaim(claim) {
@@ -214,7 +265,9 @@ bindForm(authForm, async data => {
   get('auth-dialog').close();
   const next = state.afterLogin;
   state.afterLogin = null;
-  if (next) next();
+  if (next) {
+    next();
+  }
 });
 
 bindForm(itemForm, async data => {
@@ -243,29 +296,52 @@ get('logout-button').addEventListener('click', event => run(event.currentTarget,
   chooseView('board');
   await refreshBoard();
 }));
-get('board-tab').addEventListener('click', event => run(event.currentTarget, async () => {
-  await refreshBoard();
-  chooseView('board');
-}));
 get('claims-tab').addEventListener('click', event => run(event.currentTarget, async () => {
   await refreshClaims();
   chooseView('claims');
+  get('claims').focus();
+}));
+function openBoard() {
+  chooseView('board');
+  refreshBoard();
+}
+
+get('board-tab').addEventListener('click', openBoard);
+get('find-button').addEventListener('click', openBoard);
+window.addEventListener('hashchange', () => {
+  if (location.hash === '#board' && state.view !== 'board') {
+    openBoard();
+    get('board').focus();
+  }
+});
+get('retry-board').addEventListener('click', event => run(event.currentTarget, async () => {
+  await refreshBoard();
+  if (get('board-error').hidden) {
+    get('board').focus();
+  }
 }));
 get('publish-button').addEventListener('click', () => {
-  if (state.user) showItemForm();
-  else showAuth(() => showItemForm());
+  if (state.user) {
+    showItemForm();
+  } else {
+    showAuth(() => showItemForm());
+  }
 });
 get('search').addEventListener('input', renderBoard);
 get('kind-filter').addEventListener('change', renderBoard);
+get('category-filter').addEventListener('change', renderBoard);
 document.querySelectorAll('[data-close]').forEach(control => {
   control.addEventListener('click', () => control.closest('dialog').close());
 });
 
 async function init() {
-  const { user } = await api('/session');
-  state.user = user;
-  updateProfile();
-  chooseView('board');
+  try {
+    const { user } = await api('/session');
+    state.user = user;
+    updateProfile();
+  } catch {
+    notice('Не удалось проверить вход в аккаунт. Обновите страницу, чтобы повторить.');
+  }
   await refreshBoard();
 }
 
