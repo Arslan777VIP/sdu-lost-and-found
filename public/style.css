@@ -88,6 +88,8 @@ textarea { resize: vertical; }
 .badge { align-self: start; color: #1a5040; background: #e4f3e5; padding: .2rem .55rem; border-radius: 1rem; font-weight: 700; font-size: .875rem; }
 .badge.lost { color: #784014; background: #fff0d9; }
 .badge.closed { color: #515a57; background: #ecefee; }
+.badge.awaiting_handover { color: #784014; background: #fff0d9; }
+.meeting-note { white-space: pre-wrap; }
 .notice { margin-top: 1rem; padding: .75rem 1rem; border: 1px solid #aabfb2; border-radius: .6rem; background: #fff; }
 .empty { color: #486056; }
 

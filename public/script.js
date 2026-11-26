@@ -117,15 +117,16 @@ function renderBoard() {
 
 function renderItem(item) {
   const card = element('article', '', 'card');
-  const label = item.status === 'closed' ? 'Закрыто' : item.kind === 'found' ? 'Находка' : 'Пропажа';
+  const labels = { closed: 'Закрыто', awaiting_handover: 'Ожидает передачи', found: 'Находка', lost: 'Пропажа' };
+  const badge = item.status === 'open' ? item.kind : item.status;
   card.append(
-    element('p', label, 'badge ' + (item.status === 'closed' ? 'closed' : item.kind)),
+    element('p', labels[badge], 'badge ' + badge),
     element('h3', item.title),
     element('p', item.category + ' · ' + item.location, 'meta'),
     element('p', item.description),
     element('p', 'Автор: ' + item.author, 'meta')
   );
-  if (item.status === 'closed') return card;
+  if (item.status !== 'open') return card;
   const actions = element('div', '', 'card-actions');
   if (item.author_id === state.user?.id) {
     actions.append(
@@ -188,14 +189,34 @@ function renderClaim(claim) {
     element('p', incoming ? 'От: ' + claim.claimant : 'Исходящая заявка', 'meta'),
     element('p', claim.proof)
   );
+  if (claim.meeting_note) {
+    const awaiting = claim.item_status === 'open';
+    const recipient = claim.kind === 'found' ? !incoming : incoming;
+    card.append(element('p', awaiting ? 'Ожидает передачи' : 'Вещь получена', 'badge ' + (awaiting ? 'awaiting_handover' : 'closed')));
+    card.append(element('p', 'Место и время встречи: ' + claim.meeting_note, 'meeting-note'));
+    if (awaiting && recipient) {
+      card.append(button('Вещь получена', async () => {
+        await api('/claims/' + claim.id + '/received', 'PATCH');
+        await refreshClaims();
+        notice('Получение подтверждено. Объявление закрыто.');
+      }, 'primary'));
+    }
+  }
   if (incoming && claim.status === 'pending') {
+    const noteLabel = element('label', 'Место и время встречи (видно только участникам передачи)');
+    const note = document.createElement('textarea');
+    note.rows = 2;
+    note.maxLength = 500;
+    note.placeholder = 'Например, завтра в 14:00 у входа в библиотеку';
+    noteLabel.append(note);
+    card.append(noteLabel);
     const actions = element('div', '', 'card-actions');
     const decide = async status => {
       actions.hidden = true;
       try {
-        await api('/claims/' + claim.id, 'PATCH', { status });
+        await api('/claims/' + claim.id, 'PATCH', { status, meeting_note: note.value });
         await refreshClaims();
-        notice(status === 'accepted' ? 'Заявка подтверждена. Объявление закрыто.' : 'Заявка отклонена.');
+        notice(status === 'accepted' ? 'Заявка подтверждена. Объявление ожидает передачи.' : 'Заявка отклонена.');
       } finally {
         actions.hidden = false;
       }
